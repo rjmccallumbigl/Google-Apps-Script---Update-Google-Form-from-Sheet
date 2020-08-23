@@ -5,19 +5,18 @@
 * 1. Tools -> Create a Form. Open the Form.
 * 2. This form operates under the following principals (if not this script must be modified):
 *    a. You have the header row in Row 1.
-*    b. Your header row has 3 columns: Name, URL, and Keywords.
+*    b. Your header row has 4 columns: Name, URL, Done, and Keywords.
 *    c. Name is just a string name for each row entry.
 *    d. URL is a direct link to a valid image.
 *    e. Keywords contains several keywords for the pic separated by commas.
-* 3. If the above is true, run updateForm().
+*    f. All of your names are unique values.
+* 3. If the above is true, change updateValue to however many rows you want at once and run updateForm().
 */
-
-
 
 function updateForm() {
   
   //  Set how many rows you want to do at once
-  var updateValue = 3;
+  var updateValue = 10;
   PropertiesService.getScriptProperties().setProperty('rowUpdateValue', updateValue);  
   
   //  Declare variables
@@ -182,15 +181,6 @@ function setTriggers(spreadsheet){
 
 function onFormSubmit(e) {
   
-  //  debugging
-  console.log(e.namedValues);
-  console.log(Object.keys(e.namedValues).length);
-  console.log(Object.keys(e.namedValues));
-  console.log(Object.keys(e));
-  //  return;
-  
-  //  return;
-  
   //  Declare variables
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadsheet.getSheetByName("Sheet1");
@@ -205,8 +195,14 @@ function onFormSubmit(e) {
   var keyWordList = [];
   var updatedKeyWords = [];
   
+  //  Get how many rows we're doing at once, already set in updateForm()
+  var updateValue = PropertiesService.getScriptProperties().getProperty('rowUpdateValue');
+  
+  //  Set how many you want to update at a time
+  var valueCheck = (updateValue < rangeValues.length) ? (updateValue + 1) : rangeValues.length;  
+  
   //  Go through rows to get keywords from each record
-  for (var row = 1; row < rangeValues.length; row++){
+  for (var row = 1; row < valueCheck; row++){
     name = "";
     keys = "";
     keyWordList.length = 0;
@@ -216,6 +212,11 @@ function onFormSubmit(e) {
     // Make sure we haven't already done this one
     if (rangeValues[row][checkboxHeader] == "TRUE"){
       console.log("Already did " + name);
+      
+      if (valueCheck < rangeValues.length){
+        valueCheck++;
+      }
+      
     } else {
       
       // Make sure this row has been updated in the form
