@@ -17,7 +17,7 @@
 function updateForm() {
   
   //  Set how many rows you want to do at once
-  var updateValue = 1;
+  var updateValue = 3;
   PropertiesService.getScriptProperties().setProperty('rowUpdateValue', updateValue);  
   
   //  Declare variables
@@ -50,10 +50,16 @@ function updateForm() {
   //  Go through each row on sheet to add as a form question, skipping header row
   for (var row = 1; row < valueCheck; row++){
     
+    console.log(rangeValues[row][checkboxHeader]);
+    
     //    Make sure we haven't already done this one
-    if (rangeValues[row][checkboxHeader] == "true"){
+    if (rangeValues[row][checkboxHeader] == "TRUE"){
       
-      console.log("Already did " + rangeValues[row][imageNameHeader]);
+      console.log("Already did " + rangeValues[row][checkboxHeader]);
+      
+      if (valueCheck < rangeValues.length){
+        valueCheck++;
+      }
       
     } else {
       
@@ -176,6 +182,15 @@ function setTriggers(spreadsheet){
 
 function onFormSubmit(e) {
   
+  //  debugging
+  console.log(e.namedValues);
+  console.log(Object.keys(e.namedValues).length);
+  console.log(Object.keys(e.namedValues));
+  console.log(Object.keys(e));
+  //  return;
+  
+  //  return;
+  
   //  Declare variables
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadsheet.getSheetByName("Sheet1");
@@ -190,38 +205,44 @@ function onFormSubmit(e) {
   var keyWordList = [];
   var updatedKeyWords = [];
   
-  //  Get how many rows we're doing at once, already set in updateForm()
-  var updateValue = PropertiesService.getScriptProperties().getProperty('rowUpdateValue');
-  
-  //  Set how many you want to update at a time
-  var valueCheck = (updateValue < rangeValues.length) ? (updateValue + 1) : rangeValues.length;  
-  
   //  Go through rows to get keywords from each record
-  for (var row = 1; row < valueCheck; row++){
+  for (var row = 1; row < rangeValues.length; row++){
+    name = "";
+    keys = "";
+    keyWordList.length = 0;
+    name = rangeValues[row][imageNameHeader];
+    keys = rangeValues[row][imageKeyWordHeader];
     
-    //    Make sure we haven't already done this one
-    if (rangeValues[row][checkboxHeader] == "true"){
-      
-      console.log("Already did " + rangeValues[row][imageNameHeader]);
-      
+    // Make sure we haven't already done this one
+    if (rangeValues[row][checkboxHeader] == "TRUE"){
+      console.log("Already did " + name);
     } else {
-      name = "";
-      keys = "";
-      keyWordList.length = 0;
-      name = rangeValues[row][imageNameHeader];
-      keys = rangeValues[row][imageKeyWordHeader];
-      keyWordList = keys.split(",").filter(function (el) { 
-        return el != null && el != '';
-      });
-      updatedKeyWords = e.namedValues[name].filter(function (el) { 
-        return el != null && el != '';
-      });
       
-      //    Get new keyword(s), filter null (empty) values if any, update current list of keywords
-      rangeValues[row][imageKeyWordHeader] = (keyWordList.concat(updatedKeyWords)).toString();
-      
-      //      Check value
-      rangeValues[row][checkboxHeader] = "true";            
+      // Make sure this row has been updated in the form
+      if (Object.keys(e.namedValues).indexOf(name) == -1){
+        console.log(name + " not returned");
+        
+      } else {
+        // Strip empty keywords, remove empty values
+        keyWordList = keys.split(",").filter(function (el) { 
+          return el != null && el != '';
+        });
+        updatedKeyWords = e.namedValues[name].filter(function (el) { 
+          return el != null && el != '';
+        });
+        
+        // If there is a new keyword property, update the keyword list with the new keyword       
+        if (updatedKeyWords.toString() != ""){
+          
+          // Get new keyword(s), filter null (empty) values if any, update current list of keywords
+          rangeValues[row][imageKeyWordHeader] = (keyWordList.concat(updatedKeyWords)).toString();
+          
+          // Add check to row on sheet
+          rangeValues[row][checkboxHeader] = "TRUE";            
+        } else {
+          console.log("No new properties returned for " + name);
+        }
+      }
     }
   }
   
